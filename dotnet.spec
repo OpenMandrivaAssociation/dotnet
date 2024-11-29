@@ -23,14 +23,14 @@ Version:        9.0.0%{?commit_date:~%{commit_date}}
 Release:        1
 Summary:        .NET SDK meta package
 Group:          Development
-License:        MIT-1
+License:        MIT
 URL:            https://github.com/dotnet/dotnet
 
 # change the source URL depending on if the package is a release version or a git version
 %if "%{commit_tag}" != "%{nil}"
-Source0:        https://github.com/%{name}/%{name}/archive/%{commit_tag}.tar.gz#/%{name}-%{version}.7z
+Source0:        https://github.com/%{name}/%{name}/archive/%{commit_tag}.tar.gz#/%{name}-%{version}.tar.xz
 %else
-Source0:        https://github.com/%{name}/%{name}/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
+Source0:        https://github.com/%{name}/%{name}/archive/%{version}.tar.gz#/%{name}-%{version}.tar.xz
 %endif
 
 Source1:        release.json
@@ -103,7 +103,7 @@ applications and micro-services.
 
 Summary:      .NET Runtime
 
-Requires:     pkgconfig(icu)
+Requires:     pkgconfig(icu-uc)
 Requires:     %{name}-hostfxr >= %{version}
 
 %description runtime
@@ -281,8 +281,10 @@ These are not meant for general use.
 
 %prep
 %autosetup -p1
-./prep-source-build.sh
-
+# since abf does not allow downloading components during builds
+# prep-source-build.sh is temporarily run manually 
+# and then the source is compressed
+# until a better solution can be found
 %build
 ./build.sh -sb --clean-while-building \
     --release-manifest %{S:1} \
