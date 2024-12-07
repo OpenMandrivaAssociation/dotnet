@@ -19,7 +19,7 @@
 # the short commit tag should be 7 characters long
 
 Name:		   dotnet
-Version:        9.0.0%{?commit_date:~%{commit_date}}
+Version:        9.0.101%{?commit_date:~%{commit_date}}
 Release:        1
 Summary:        .NET SDK meta package
 Group:          Development
