@@ -286,7 +286,7 @@ These are not meant for general use.
 # and then the source is compressed
 # until a better solution can be found
 %build
-./build.sh -sb --clean-while-building \
+DOTNET_CLI_TELEMETRY_OPTOUT=1 ./build.sh -sb --clean-while-building \
     --release-manifest %{S:1} \
     --with-system-libs brotli+llvmlibunwind+rapidjson+zlib
 
