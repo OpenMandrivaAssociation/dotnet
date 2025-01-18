@@ -51,7 +51,7 @@ BuildRequires:  python3
 
 BuildRequires:  pkgconfig(lttng-ust)
 BuildRequires:  pkgconfig(openssl)
-BuildRequires:  pkgconfig(krb5)
+BuildRequires:  pkgconfig(mit-krb5)
 BuildRequires:  pkgconfig(icu-uc)
 BuildRequires:  pkgconfig(libbrotlicommon)
 BuildRequires:  pkgconfig(libunwind-llvm)
