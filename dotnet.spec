@@ -288,7 +288,10 @@ These are not meant for general use.
 %build
 DOTNET_CLI_TELEMETRY_OPTOUT=1 ./build.sh -sb --clean-while-building \
     --release-manifest %{S:1} \
-    --with-system-libs brotli+llvmlibunwind+rapidjson+zlib
+%ifarch %{aarch64}
+    /p:OverrideTargetRid=linux-arm64 \
+%endif
+    --with-system-libs brotli+llvmlibunwind+rapidjson+zlib 
 
 %install
 install -dm 0755 %{buildroot}%{_libdir}/dotnet
