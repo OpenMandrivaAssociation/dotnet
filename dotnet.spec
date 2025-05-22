@@ -4,36 +4,27 @@
 # unnecessary versioning info since newer .net versions support older
 # versions
 
-# set to nil when packaging a release, 
-# or the long commit tag for the specific git branch
-%global commit_tag %{nil}
-
-# set with the commit date only if commit_tag not nil 
-# git version (i.e. master) in format date +Ymd
-%if "%{commit_tag}" != "%{nil}"
-%global commit_date %(git show -s --date=format:'%Y%m%d' %{commit_tag})
+%define bootstrap_version 9.0.5
+%ifarch %{aarch64}
+%define bootstrap_arch linux-arm64
 %endif
 
-# repack non-release git branches as .7z with the commit date
-# in the following format <name>-<version>-<commit_date>.7z
-# the short commit tag should be 7 characters long
+%ifarch %{x86_64}
+%define bootstrap_arch linux-x64
+%endif
 
 Name:		   dotnet
-Version:        9.0.101%{?commit_date:~%{commit_date}}
+Version:        9.0.5
 Release:        1
 Summary:        .NET SDK meta package
 Group:          Development
 License:        MIT
 URL:            https://github.com/dotnet/dotnet
 
-# change the source URL depending on if the package is a release version or a git version
-%if "%{commit_tag}" != "%{nil}"
-Source0:        https://github.com/%{name}/%{name}/archive/%{commit_tag}.tar.gz#/%{name}-%{version}.tar.xz
-%else
-Source0:        https://github.com/%{name}/%{name}/archive/%{version}.tar.gz#/%{name}-%{version}.tar.xz
-%endif
-
-Source1:        release.json
+Source0:        https://github.com/%name/%name/archive/%version.tar.gz#/%name-%version.tar.xz
+Source1:        release-%version.json
+Source2:        %name-sdk-%{bootstrap_version}-%{bootstrap_arch}
+Source3:        %name-artifiacts-%{bootstrap_version}-%{bootstrap_arch}
 
 BuildRequires:  cmake
 BuildRequires:  curl
@@ -281,12 +272,20 @@ These are not meant for general use.
 
 %prep
 %autosetup -p1
-# since abf does not allow downloading components during builds
-# prep-source-build.sh is temporarily run manually 
-# and then the source is compressed
-# until a better solution can be found
+tar xf %{S:2} -C bs_sdk 
+tar xf %{S:3} -C bs_artifacts
+./prep-source-build.sh \
+    --no-sdk
+    --no-artifacts
+    --no-bootstrap
+    --with-sdk bs_sdk
+    --with-packages bs_artifacts
+
 %build
-DOTNET_CLI_TELEMETRY_OPTOUT=1 ./build.sh -sb --clean-while-building \
+DOTNET_CLI_TELEMETRY_OPTOUT=1 ./build.sh \
+    --source-only \
+    --with-sdk bs_sdk \
+    --with-packages bs_artifacts \
     --release-manifest %{S:1} \
 %ifarch %{aarch64}
     /p:OverrideTargetRid=linux-arm64 \
@@ -294,133 +293,133 @@ DOTNET_CLI_TELEMETRY_OPTOUT=1 ./build.sh -sb --clean-while-building \
     --with-system-libs brotli+llvmlibunwind+rapidjson+zlib 
 
 %install
-install -dm 0755 %{buildroot}%{_libdir}/dotnet
+install -dm 0755 %{buildroot}%{_libdir}/%name
 
-tar xf artifacts/assets/Release/dotnet-sdk-*.tar.gz -C %{buildroot}%{_libdir}/dotnet/
+tar xf artifacts/assets/Release/%name-sdk-*.tar.gz -C %{buildroot}%{_libdir}/dotnet/
 
 # Delete bundled certificates: we want to use the system store only,
 # except for when we have no other choice and ca-certificates doesn't
 # provide it. Currently ca-ceritificates has no support for
 # timestamping certificates (timestamp.ctl).
-find %{buildroot}%{_libdir}/dotnet -name 'codesignctl.pem' -delete
-if [[ $(find %{buildroot}%{_libdir}/dotnet -name '*.pem' -print | wc -l) != 1 ]]; then
-    find %{buildroot}%{_libdir}/dotnet -name '*.pem' -print
+find %{buildroot}%{_libdir}/%name -name 'codesignctl.pem' -delete
+if [[ $(find %{buildroot}%{_libdir}/%name -name '*.pem' -print | wc -l) != 1 ]]; then
+    find %{buildroot}%{_libdir}/%name -name '*.pem' -print
     echo "too many certificate bundles"
     exit 2
 fi
 
 # Install managed symbols
-tar xf artifacts/assets/Release/dotnet-symbols-sdk-*.tar.gz \
-   -C %{buildroot}%{_libdir}/dotnet/
-find %{buildroot}%{_libdir}/dotnet/packs -iname '*.pdb' -delete
+tar xf artifacts/assets/Release/%name-symbols-sdk-*.tar.gz \
+   -C %{buildroot}%{_libdir}/%name/
+find %{buildroot}%{_libdir}/%name/packs -iname '*.pdb' -delete
 
 # Fix executable permissions on files
-find %{buildroot}%{_libdir}/dotnet/ -type f -name 'apphost' -exec chmod +x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name 'ilc' -exec chmod +x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name 'singlefilehost' -exec chmod +x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name '*.sh' -exec chmod +x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name 'lib*so' -exec chmod +x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name '*.a' -exec chmod -x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name '*.dll' -exec chmod -x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name '*.h' -exec chmod 0644 {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name '*.json' -exec chmod -x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name '*.o' -exec chmod -x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name '*.pdb' -exec chmod -x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name '*.props' -exec chmod -x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name '*.pubxml' -exec chmod -x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name '*.targets' -exec chmod -x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name '*.txt' -exec chmod -x {} \;
-find %{buildroot}%{_libdir}/dotnet/ -type f -name '*.xml' -exec chmod -x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name 'apphost' -exec chmod +x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name 'ilc' -exec chmod +x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name 'singlefilehost' -exec chmod +x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name '*.sh' -exec chmod +x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name 'lib*so' -exec chmod +x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name '*.a' -exec chmod -x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name '*.dll' -exec chmod -x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name '*.h' -exec chmod 0644 {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name '*.json' -exec chmod -x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name '*.o' -exec chmod -x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name '*.pdb' -exec chmod -x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name '*.props' -exec chmod -x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name '*.pubxml' -exec chmod -x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name '*.targets' -exec chmod -x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name '*.txt' -exec chmod -x {} \;
+find %{buildroot}%{_libdir}/%name/ -type f -name '*.xml' -exec chmod -x {} \;
 
 # Install dynamic completions
 install -dm 0755 %{buildroot}/%{_datadir}/bash-completion/completions
-install src/sdk/scripts/register-completions.bash %{buildroot}/%{_datadir}/bash-completion/completions/dotnet
+install src/sdk/scripts/register-completions.bash %{buildroot}/%{_datadir}/bash-completion/completions/%name
 install -dm 755 %{buildroot}/%{_datadir}/zsh/site-functions
-install src/sdk/scripts/register-completions.zsh %{buildroot}/%{_datadir}/zsh/site-functions/_dotnet
+install src/sdk/scripts/register-completions.zsh %{buildroot}/%{_datadir}/zsh/site-functions/_%name
 
 install -dm 0755 %{buildroot}%{_bindir}
-ln -s ../../%{_libdir}/dotnet/dotnet %{buildroot}%{_bindir}/
+ln -s ../../%{_libdir}/%name/%name %{buildroot}%{_bindir}/
 
 for section in 1 7; do
     install -dm 0755 %{buildroot}%{_mandir}/man${section}/
-    find -iname 'dotnet*'.${section} -type f -exec cp {} %{buildroot}%{_mandir}/man${section}/ \;
+    find -iname '%name*'.${section} -type f -exec cp {} %{buildroot}%{_mandir}/man${section}/ \;
 done
 
-install -dm 0755 %{buildroot}%{_sysconfdir}/dotnet
-echo "%{_libdir}/dotnet" >> install_location
-install install_location %{buildroot}%{_sysconfdir}/dotnet/
+install -dm 0755 %{buildroot}%{_sysconfdir}/%name
+echo "%{_libdir}/%name" >> install_location
+install install_location %{buildroot}%{_sysconfdir}/%name/
 
-install -dm 0755 %{buildroot}%{_libdir}/dotnet/source-built-artifacts
-install -m 0644 artifacts/assets/Release/Private.SourceBuilt.Artifacts.*.tar.gz %{buildroot}/%{_libdir}/dotnet/source-built-artifacts/
+install -dm 0755 %{buildroot}%{_libdir}/%name/source-built-artifacts
+install -m 0644 artifacts/assets/Release/Private.SourceBuilt.Artifacts.*.tar.gz %{buildroot}/%{_libdir}/%name/source-built-artifacts/
 
-find %{buildroot}%{_libdir}/dotnet/shared/Microsoft.NETCore.App -type f -and -not -name '*.pdb' | sed -E 's|%{buildroot}||' > dotnet-runtime-non-dbg-files
-find %{buildroot}%{_libdir}/dotnet/shared/Microsoft.NETCore.App -type f -name '*.pdb'  | sed -E 's|%{buildroot}||' > dotnet-runtime-dbg-files
-find %{buildroot}%{_libdir}/dotnet/shared/Microsoft.AspNetCore.App -type f -and -not -name '*.pdb'  | sed -E 's|%{buildroot}||' > aspnetcore-runtime-non-dbg-files
-find %{buildroot}%{_libdir}/dotnet/shared/Microsoft.AspNetCore.App -type f -name '*.pdb' | sed -E 's|%{buildroot}||' > aspnetcore-runtime-dbg-files
-find %{buildroot}%{_libdir}/dotnet/sdk -type d | tail -n +2 | sed -E 's|%{buildroot}||' | sed -E 's|^|%dir |' > dotnet-sdk-non-dbg-files
-find %{buildroot}%{_libdir}/dotnet/sdk -type f -and -not -name '*.pdb' | sed -E 's|%{buildroot}||' >> dotnet-sdk-non-dbg-files
-find %{buildroot}%{_libdir}/dotnet/sdk -type f -name '*.pdb'  | sed -E 's|%{buildroot}||' > dotnet-sdk-dbg-files
+find %{buildroot}%{_libdir}/%name/shared/Microsoft.NETCore.App -type f -and -not -name '*.pdb' | sed -E 's|%{buildroot}||' > %name-runtime-non-dbg-files
+find %{buildroot}%{_libdir}/%name/shared/Microsoft.NETCore.App -type f -name '*.pdb'  | sed -E 's|%{buildroot}||' > %name-runtime-dbg-files
+find %{buildroot}%{_libdir}/%name/shared/Microsoft.AspNetCore.App -type f -and -not -name '*.pdb'  | sed -E 's|%{buildroot}||' > aspnetcore-runtime-non-dbg-files
+find %{buildroot}%{_libdir}/%name/shared/Microsoft.AspNetCore.App -type f -name '*.pdb' | sed -E 's|%{buildroot}||' > aspnetcore-runtime-dbg-files
+find %{buildroot}%{_libdir}/%name/sdk -type d | tail -n +2 | sed -E 's|%{buildroot}||' | sed -E 's|^|%dir |' > %name-sdk-non-dbg-files
+find %{buildroot}%{_libdir}/%name/sdk -type f -and -not -name '*.pdb' | sed -E 's|%{buildroot}||' >> %name-sdk-non-dbg-files
+find %{buildroot}%{_libdir}/%name/sdk -type f -name '*.pdb'  | sed -E 's|%{buildroot}||' > %name-sdk-dbg-files
 
 %check
 
 %files host
-%dir %{_libdir}/dotnet
-%{_libdir}/dotnet/dotnet
-%dir %{_libdir}/dotnet/host
-%dir %{_libdir}/dotnet/host/fxr
-%{_bindir}/dotnet
-%license %{_libdir}/dotnet/LICENSE.txt
-%license %{_libdir}/dotnet/ThirdPartyNotices.txt
-%doc %{_mandir}/man1/dotnet*.1.*
-%doc %{_mandir}/man7/dotnet*.7.*
-%config(noreplace) %{_sysconfdir}/dotnet
-%{_datadir}/bash-completion/completions/dotnet
-%{_datadir}/zsh/site-functions/_dotnet
+%dir %{_libdir}/%name
+%{_libdir}/%name/%name
+%dir %{_libdir}/%name/host
+%dir %{_libdir}/%name/host/fxr
+%{_bindir}/%name
+%license %{_libdir}/%name/LICENSE.txt
+%license %{_libdir}/%name/ThirdPartyNotices.txt
+%doc %{_mandir}/man1/%name*.1.*
+%doc %{_mandir}/man7/%name*.7.*
+%config(noreplace) %{_sysconfdir}/%name
+%{_datadir}/bash-completion/completions/%name
+%{_datadir}/zsh/site-functions/_%name
 
 
 %files hostfxr
-%dir %{_libdir}/dotnet/host/fxr
-%{_libdir}/dotnet/host/fxr/*
+%dir %{_libdir}/%name/host/fxr
+%{_libdir}/%name/host/fxr/*
 
-%files runtime -f %{name}-runtime-non-dbg-files
-%dir %{_libdir}/dotnet/shared
-%dir %{_libdir}/dotnet/shared/Microsoft.NETCore.App
-%dir %{_libdir}/dotnet/shared/Microsoft.NETCore.App/*
+%files runtime -f %name-runtime-non-dbg-files
+%dir %{_libdir}/%name/shared
+%dir %{_libdir}/%name/shared/Microsoft.NETCore.App
+%dir %{_libdir}/%name/shared/Microsoft.NETCore.App/*
 
-%files runtime-dbg -f %{name}-runtime-dbg-files
+%files runtime-dbg -f %name-runtime-dbg-files
 
 %files -n aspnetcore-runtime -f aspnetcore-runtime-non-dbg-files
-%dir %{_libdir}/dotnet/shared
-%dir %{_libdir}/dotnet/shared/Microsoft.AspNetCore.App
-%dir %{_libdir}/dotnet/shared/Microsoft.AspNetCore.App/*
+%dir %{_libdir}/%name/shared
+%dir %{_libdir}/%name/shared/Microsoft.AspNetCore.App
+%dir %{_libdir}/%name/shared/Microsoft.AspNetCore.App/*
 
 %files -n aspnetcore-runtime-dbg -f aspnetcore-runtime-dbg-files
 
 %files templates
-%dir %{_libdir}/dotnet/templates
-%{_libdir}/dotnet/templates/*
+%dir %{_libdir}/%name/templates
+%{_libdir}/%name/templates/*
 
-%files sdk -f %{name}-sdk-non-dbg-files
-%dir %{_libdir}/dotnet/sdk
-%dir %{_libdir}/dotnet/sdk-manifests
-%{_libdir}/dotnet/sdk-manifests/*
+%files sdk -f %name-sdk-non-dbg-files
+%dir %{_libdir}/%name/sdk
+%dir %{_libdir}/%name/sdk-manifests
+%{_libdir}/%name/sdk-manifests/*
 # FIXME is using a 8.0.100 version a bug in the SDK?
-%{_libdir}/dotnet/metadata
-%{_libdir}/dotnet/library-packs
-%dir %{_libdir}/dotnet/packs
-%dir %{_libdir}/dotnet/packs/Microsoft.AspNetCore.App.Runtime.*
-%{_libdir}/dotnet/packs/Microsoft.AspNetCore.App.Runtime.*/*
-%dir %{_libdir}/dotnet/packs/Microsoft.NETCore.App.Runtime.*
-%{_libdir}/dotnet/packs/Microsoft.NETCore.App.Runtime.*/*
+%{_libdir}/%name/metadata
+%{_libdir}/%name/library-packs
+%dir %{_libdir}/%name/packs
+%dir %{_libdir}/%name/packs/Microsoft.AspNetCore.App.Runtime.*
+%{_libdir}/%name/packs/Microsoft.AspNetCore.App.Runtime.*/*
+%dir %{_libdir}/%name/packs/Microsoft.NETCore.App.Runtime.*
+%{_libdir}/%name/packs/Microsoft.NETCore.App.Runtime.*/*
 
-%files sdk-dbg -f %{name}-sdk-dbg-files
+%files sdk-dbg -f %name-sdk-dbg-files
 
 %files sdk-aot
-%dir %{_libdir}/dotnet/packs
-%dir %{_libdir}/dotnet/packs/runtime.*.Microsoft.DotNet.ILCompiler/
-%{_libdir}/dotnet/packs/runtime.*.Microsoft.DotNet.ILCompiler/*
+%dir %{_libdir}/%name/packs
+%dir %{_libdir}/%name/packs/runtime.*.Microsoft.DotNet.ILCompiler/
+%{_libdir}/%name/packs/runtime.*.Microsoft.DotNet.ILCompiler/*
 
 %files sdk-source-built-artifacts
-%dir %{_libdir}/dotnet
-%{_libdir}/dotnet/source-built-artifacts
+%dir %{_libdir}/%name
+%{_libdir}/%name/source-built-artifacts
 
