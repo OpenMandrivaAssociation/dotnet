@@ -4,14 +4,8 @@
 # unnecessary versioning info since newer .net versions support older
 # versions
 
-%define bootstrap_version 9.0.5
-%ifarch %{aarch64}
-%define bootstrap_arch linux-arm64
-%endif
-
-%ifarch %{x86_64}
-%define bootstrap_arch linux-x64
-%endif
+%define bootstrap_version 9.0.106
+%define bootstrap_rid openmandriva.25.90-x64
 
 Name:		   dotnet
 Version:        9.0.5
@@ -21,10 +15,10 @@ Group:          Development
 License:        MIT
 URL:            https://github.com/dotnet/dotnet
 
-Source0:        https://github.com/%name/%name/archive/%version.tar.gz#/%name-%version.tar.xz
+Source0:        https://github.com/%name/%name/archive/v%version.tar.gz#/%name-%version.tar.gz
 Source1:        release-%version.json
-Source2:        %name-sdk-%{bootstrap_version}-%{bootstrap_arch}
-Source3:        %name-artifiacts-%{bootstrap_version}-%{bootstrap_arch}
+Source2:        %name-sdk-%{bootstrap_version}-%{bootstrap_rid}.tar.gz
+Source3:        Private.SourceBuilt.Artifacts.%{bootstrap_version}-servicing.25230.1.%{bootstrap_rid}.tar.gz
 
 BuildRequires:  cmake
 BuildRequires:  curl
@@ -272,24 +266,24 @@ These are not meant for general use.
 
 %prep
 %autosetup -p1
-tar xf %{S:2} -C bs_sdk 
-tar xf %{S:3} -C bs_artifacts
+mkdir bs_sdk bs_artifacts
+tar zxf %{S:2} -C bs_sdk 
+tar zxf %{S:3} -C bs_artifacts
 ./prep-source-build.sh \
-    --no-sdk
-    --no-artifacts
-    --no-bootstrap
-    --with-sdk bs_sdk
-    --with-packages bs_artifacts
+    --no-sdk \
+    --no-artifacts \
+    --no-bootstrap \
+    --no-prebuilts \
+    --no-binary-removal \
+    --with-sdk %{_builddir}/%name-%version/bs_sdk \
+    --with-packages %{_builddir}/%name-%version/bs_artifacts
 
 %build
 DOTNET_CLI_TELEMETRY_OPTOUT=1 ./build.sh \
     --source-only \
-    --with-sdk bs_sdk \
-    --with-packages bs_artifacts \
+    --with-sdk %{_builddir}/%name-%version/bs_sdk \
+    --with-packages %{_builddir}/%name-%version/bs_artifacts \
     --release-manifest %{S:1} \
-%ifarch %{aarch64}
-    /p:OverrideTargetRid=linux-arm64 \
-%endif
     --with-system-libs brotli+llvmlibunwind+rapidjson+zlib 
 
 %install
@@ -340,11 +334,6 @@ install src/sdk/scripts/register-completions.zsh %{buildroot}/%{_datadir}/zsh/si
 install -dm 0755 %{buildroot}%{_bindir}
 ln -s ../../%{_libdir}/%name/%name %{buildroot}%{_bindir}/
 
-for section in 1 7; do
-    install -dm 0755 %{buildroot}%{_mandir}/man${section}/
-    find -iname '%name*'.${section} -type f -exec cp {} %{buildroot}%{_mandir}/man${section}/ \;
-done
-
 install -dm 0755 %{buildroot}%{_sysconfdir}/%name
 echo "%{_libdir}/%name" >> install_location
 install install_location %{buildroot}%{_sysconfdir}/%name/
@@ -370,8 +359,8 @@ find %{buildroot}%{_libdir}/%name/sdk -type f -name '*.pdb'  | sed -E 's|%{build
 %{_bindir}/%name
 %license %{_libdir}/%name/LICENSE.txt
 %license %{_libdir}/%name/ThirdPartyNotices.txt
-%doc %{_mandir}/man1/%name*.1.*
-%doc %{_mandir}/man7/%name*.7.*
+# %doc %{_mandir}/man1/%name*.1.*
+# %doc %{_mandir}/man7/%name*.7.*
 %config(noreplace) %{_sysconfdir}/%name
 %{_datadir}/bash-completion/completions/%name
 %{_datadir}/zsh/site-functions/_%name
