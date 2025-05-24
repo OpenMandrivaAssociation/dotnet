@@ -2,3 +2,5 @@ sources:
   Private.SourceBuilt.Artifacts.9.0.106-servicing.25230.1.openmandriva.25.90-x64.tar.gz: 4e9c7194612ac69e2ce9562a8dacdbf0432de35b
   dotnet-9.0.5.tar.gz: 8bf1d9c457bb428dde84780de4f9bf12e13d2c3e
   dotnet-sdk-9.0.106-openmandriva.25.90-x64.tar.gz: dab4589f49ce1192d642f9918b302cb1fc1f5838
+  dotnet-sdk-9.0.106-linux-arm64.tar.gz: 2947f1d966da42e5dd5b21267f96d6c385d2d1e6
+  Private.SourceBuilt.Artifacts.9.0.106-servicing.25230.1.openmandriva.25.90-arm64.tar.gz: 2c75c1f2f3ba698da6d846daf8697d7f02e54c92

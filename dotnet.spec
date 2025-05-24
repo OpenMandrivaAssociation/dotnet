@@ -4,8 +4,19 @@
 # unnecessary versioning info since newer .net versions support older
 # versions
 
+# Bootstrapping guidelines are found here:
+# https://github.com/dotnet/source-build/blob/main/Documentation/bootstrapping-guidelines.md
+# It must be created locally and uploaded as part of the spec binaries to ABF for each major version.
+
 %define bootstrap_version 9.0.106
-%define bootstrap_rid openmandriva.25.90-x64
+%ifarch %{x86_64}
+%define bootstrap_arch x64
+%endif
+%ifarch %{aarch64}
+%define bootstrap_arch arm64
+%endif
+
+%define os_version openmandriva.25.90
 
 Name:		   dotnet
 Version:        9.0.5
@@ -17,8 +28,16 @@ URL:            https://github.com/dotnet/dotnet
 
 Source0:        https://github.com/%name/%name/archive/v%version.tar.gz#/%name-%version.tar.gz
 Source1:        release-%version.json
-Source2:        %name-sdk-%{bootstrap_version}-%{bootstrap_rid}.tar.gz
-Source3:        Private.SourceBuilt.Artifacts.%{bootstrap_version}-servicing.25230.1.%{bootstrap_rid}.tar.gz
+
+%ifarch %{x86_64}
+Source2:        %name-sdk-%{bootstrap_version}-%{os_version}-%{bootstrap_arch}.tar.gz
+%endif
+
+%ifarch %{aarch64}
+Source2:        %name-sdk-%{bootstrap_version}-linux-%{bootstrap_arch}.tar.gz
+%endif 
+
+Source3:        Private.SourceBuilt.Artifacts.%{bootstrap_version}-servicing.25230.1.%{os_version}-%{bootstrap_arch}.tar.gz
 
 BuildRequires:  cmake
 BuildRequires:  curl
@@ -289,7 +308,7 @@ DOTNET_CLI_TELEMETRY_OPTOUT=1 ./build.sh \
 %install
 install -dm 0755 %{buildroot}%{_libdir}/%name
 
-tar xf artifacts/assets/Release/%name-sdk-*.tar.gz -C %{buildroot}%{_libdir}/dotnet/
+tar zxf artifacts/assets/Release/%name-sdk-*.tar.gz -C %{buildroot}%{_libdir}/dotnet/
 
 # Delete bundled certificates: we want to use the system store only,
 # except for when we have no other choice and ca-certificates doesn't
@@ -303,7 +322,7 @@ if [[ $(find %{buildroot}%{_libdir}/%name -name '*.pem' -print | wc -l) != 1 ]];
 fi
 
 # Install managed symbols
-tar xf artifacts/assets/Release/%name-symbols-sdk-*.tar.gz \
+tar zxf artifacts/assets/Release/%name-symbols-sdk-*.tar.gz \
    -C %{buildroot}%{_libdir}/%name/
 find %{buildroot}%{_libdir}/%name/packs -iname '*.pdb' -delete
 
