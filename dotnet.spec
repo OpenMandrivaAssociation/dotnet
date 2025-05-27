@@ -28,15 +28,7 @@ URL:            https://github.com/dotnet/dotnet
 
 Source0:        https://github.com/%name/%name/archive/v%version.tar.gz#/%name-%version.tar.gz
 Source1:        release-%version.json
-
-%ifarch %{x86_64}
 Source2:        %name-sdk-%{bootstrap_version}-%{os_version}-%{bootstrap_arch}.tar.gz
-%endif
-
-%ifarch %{aarch64}
-Source2:        %name-sdk-%{bootstrap_version}-linux-%{bootstrap_arch}.tar.gz
-%endif 
-
 Source3:        Private.SourceBuilt.Artifacts.%{bootstrap_version}-servicing.25230.1.%{os_version}-%{bootstrap_arch}.tar.gz
 
 BuildRequires:  cmake
