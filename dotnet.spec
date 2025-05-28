@@ -20,7 +20,7 @@
 
 Name:		   dotnet
 Version:        9.0.5
-Release:        1
+Release:        2
 Summary:        .NET SDK meta package
 Group:          Development
 License:        MIT
@@ -175,7 +175,7 @@ Requires:     aspnetcore-runtime >= %{version}
 Requires:     %{name}-apphost-pack >= %{version}
 Requires:     %{name}-targeting-pack >= %{version}
 Requires:     aspnetcore-targeting-pack >= %{version}
-Requires:     netstandard-targeting-pack-2.1 >= %{version}
+Requires:     netstandard-targeting-pack >= %{version}
 
 Requires:     %{name}-templates >= %{version}
 
