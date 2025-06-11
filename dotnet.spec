@@ -17,8 +17,8 @@
 %endif
 
 Name:		   dotnet
-Version:        9.0.5
-Release:        3
+Version:        9.0.6
+Release:        1
 Summary:        .NET SDK meta package
 Group:          Development
 License:        MIT
