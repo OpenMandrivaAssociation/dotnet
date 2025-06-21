@@ -204,7 +204,7 @@ Summary:      Ahead-of-Time (AOT) support for the .NET Software Development Kit
 Requires:     %{name}-sdk = %{version}
 
 Requires:     pkgconfig(libbrotlicommon)
-Requires:     pkgconfig(ssl)
+Requires:     pkgconfig(openssl)
 Requires:     pkgconfig(zlib)
 
 %description sdk-aot
