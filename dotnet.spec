@@ -17,7 +17,7 @@
 %endif
 
 Name:		   dotnet
-Version:        9.0.6
+Version:        9.0.7
 Release:        1
 Summary:        .NET SDK meta package
 Group:          Development
@@ -25,7 +25,7 @@ License:        MIT
 URL:            https://github.com/dotnet/dotnet
 
 Source0:        https://github.com/%name/%name/archive/v%version.tar.gz#/%name-%version.tar.gz
-Source1:        release-%version.json
+Source1:        https://github.com/%name/%name/releases/download/v%version/release.json#/release-%version.json
 Source2:        %name-sdk-%{bootstrap_version}-%{_vendor}.%{product_version}-%{bootstrap_arch}.tar.gz
 Source3:        Private.SourceBuilt.Artifacts.%{bootstrap_version}-servicing.25230.1.%{_vendor}.%{product_version}-%{bootstrap_arch}.tar.gz
 
