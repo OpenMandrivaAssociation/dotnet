@@ -17,7 +17,7 @@
 %endif
 
 Name:		   dotnet
-Version:        9.0.7
+Version:        9.0.8
 Release:        1
 Summary:        .NET SDK meta package
 Group:          Development
