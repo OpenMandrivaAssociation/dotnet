@@ -1,3 +1,6 @@
+# This package will consist of the LTS version and not the STS version
+# Devs wanting STS will need to bring that themselves
+
 # Portions were reused from the Rocky Linux spec here:
 # https://git.rockylinux.org/staging/rpms/dotnet9.0/-/blob/r8/SPECS/dotnet9.0.spec
 # recipe was adapted to the monolithic repo for dotnet and to remove 
@@ -5,10 +8,15 @@
 # versions
 
 # Bootstrapping guidelines are found here:
+# use DOTNET_CLI_TELEMETRY_OPTOUT=1 during the build phase
 # https://github.com/dotnet/source-build/blob/main/Documentation/bootstrapping-guidelines.md
 # It must be created locally and uploaded as part of the spec binaries to ABF for each major version.
+# Stage 2 is performed by this spec
 
-%define bootstrap_version 9.0.106
+%define sdk_version 10.0.101
+%define servicing_version 25569.105
+
+%define bootstrap_version %{sdk_version}-servicing.%{servicing_version}
 %ifarch %{x86_64}
 %define bootstrap_arch x64
 %endif
@@ -17,17 +25,17 @@
 %endif
 
 Name:		   dotnet
-Version:        9.0.7
+Version:        10.0.1
 Release:        1
 Summary:        .NET SDK meta package
 Group:          Development
 License:        MIT
 URL:            https://github.com/dotnet/dotnet
 
-Source0:        https://github.com/%name/%name/archive/v%version.tar.gz#/%name-%version.tar.gz
+Source0:        https://github.com/%name/%name/archive/v%version.tar.gz#/%name-%{sdk_version}.tar.gz
 Source1:        https://github.com/%name/%name/releases/download/v%version/release.json#/release-%version.json
 Source2:        %name-sdk-%{bootstrap_version}-%{_vendor}.%{product_version}-%{bootstrap_arch}.tar.gz
-Source3:        Private.SourceBuilt.Artifacts.%{bootstrap_version}-servicing.25230.1.%{_vendor}.%{product_version}-%{bootstrap_arch}.tar.gz
+Source3:        Private.SourceBuilt.Artifacts.%{bootstrap_version}.%{_vendor}.%{product_version}-%{bootstrap_arch}.tar.gz
 
 BuildRequires:  cmake
 BuildRequires:  curl
@@ -252,12 +260,12 @@ Allows developers to compile and target aspnetcore using .NET SDK.
 
 %package -n netstandard-targeting-pack
 
-Summary:      Targeting Pack for NETStandard.Library 2.1
+Summary:      Targeting Pack for NETStandard.Library
 
 Requires:     %{name}-host
 
 %description -n netstandard-targeting-pack
-Allows developers to compile and target NETStandard library 2.1 using .NET SDK.
+Allows developers to compile and target NETStandard library using .NET SDK.
 
 %files -n netstandard-targeting-pack
 %dir %{_libdir}/dotnet/packs
