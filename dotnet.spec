@@ -13,10 +13,10 @@
 # It must be created locally and uploaded as part of the spec binaries to ABF for each major version.
 # Stage 2 is performed by this spec
 
-%define sdk_version 10.0.101
-%define servicing_version 25569.105
+%define sdk_version 10.0.103
+%define servicing_version 26075.103
 
-%define bootstrap_version %{sdk_version}-servicing.%{servicing_version}
+%define bootstrap_version %{sdk_version}
 %ifarch %{x86_64}
 %define bootstrap_arch x64
 %endif
@@ -25,7 +25,7 @@
 %endif
 
 Name:		   dotnet
-Version:        10.0.1
+Version:        10.0.3
 Release:        1
 Summary:        .NET SDK meta package
 Group:          Development
@@ -33,12 +33,12 @@ License:        MIT
 URL:            https://github.com/dotnet/dotnet
 
 Source0:        https://github.com/%name/%name/archive/v%version.tar.gz#/%name-%{sdk_version}.tar.gz
-Source1:        https://github.com/%name/%name/releases/download/v%version/release.json#/release-%version.json
+Source1:        https://github.com/%name/%name/releases/download/v%sdk_version/release.json#/release-%version.json
 Source2:        %name-sdk-%{bootstrap_version}-%{_vendor}.%{product_version}-%{bootstrap_arch}.tar.gz
-Source3:        Private.SourceBuilt.Artifacts.%{bootstrap_version}.%{_vendor}.%{product_version}-%{bootstrap_arch}.tar.gz
-Source4:        release-%version.json
+Source3:        Private.SourceBuilt.Artifacts.%{bootstrap_version}-servicing.%{servicing_version}.%{_vendor}.%{product_version}-%{bootstrap_arch}.tar.gz
 
 BuildRequires:  cmake
+BuildRequires:  make
 BuildRequires:  curl
 BuildRequires:  cpio
 BuildRequires:  binutils
@@ -60,6 +60,8 @@ BuildRequires:  pkgconfig(libbrotlicommon)
 BuildRequires:  pkgconfig(libunwind-llvm)
 BuildRequires:  pkgconfig(zlib)
 BuildRequires:  pkgconfig(RapidJSON)
+
+Obsoletes:      netstandard-targeting-pack <= %{EVRD}
 
 %description
 .NET is a fast, lightweight and modular platform for creating
@@ -259,19 +261,6 @@ Allows developers to compile and target aspnetcore using .NET SDK.
 %dir %{_libdir}/dotnet/packs
 %{_libdir}/dotnet/packs/Microsoft.AspNetCore.App.Ref
 
-%package -n netstandard-targeting-pack
-
-Summary:      Targeting Pack for NETStandard.Library
-
-Requires:     %{name}-host
-
-%description -n netstandard-targeting-pack
-Allows developers to compile and target NETStandard library using .NET SDK.
-
-%files -n netstandard-targeting-pack
-%dir %{_libdir}/dotnet/packs
-%{_libdir}/dotnet/packs/NETStandard.Library.Ref
-
 %package sdk-source-built-artifacts
 
 Summary:      Internal package for building .NET Software Development Kit
@@ -367,8 +356,6 @@ find %{buildroot}%{_libdir}/%name/sdk -type d | tail -n +2 | sed -E 's|%{buildro
 find %{buildroot}%{_libdir}/%name/sdk -type f -and -not -name '*.pdb' | sed -E 's|%{buildroot}||' >> %name-sdk-non-dbg-files
 find %{buildroot}%{_libdir}/%name/sdk -type f -name '*.pdb'  | sed -E 's|%{buildroot}||' > %name-sdk-dbg-files
 
-%check
-
 %files host
 %dir %{_libdir}/%name
 %{_libdir}/%name/%name
@@ -418,6 +405,7 @@ find %{buildroot}%{_libdir}/%name/sdk -type f -name '*.pdb'  | sed -E 's|%{build
 %{_libdir}/%name/packs/Microsoft.AspNetCore.App.Runtime.*/*
 %dir %{_libdir}/%name/packs/Microsoft.NETCore.App.Runtime.*
 %{_libdir}/%name/packs/Microsoft.NETCore.App.Runtime.*/*
+%{_libdir}/%name/dnx
 
 %files sdk-dbg -f %name-sdk-dbg-files
 
