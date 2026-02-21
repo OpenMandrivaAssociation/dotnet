@@ -36,6 +36,7 @@ Source0:        https://github.com/%name/%name/archive/v%version.tar.gz#/%name-%
 Source1:        https://github.com/%name/%name/releases/download/v%version/release.json#/release-%version.json
 Source2:        %name-sdk-%{bootstrap_version}-%{_vendor}.%{product_version}-%{bootstrap_arch}.tar.gz
 Source3:        Private.SourceBuilt.Artifacts.%{bootstrap_version}.%{_vendor}.%{product_version}-%{bootstrap_arch}.tar.gz
+Source4:        release-%version.json
 
 BuildRequires:  cmake
 BuildRequires:  curl
