@@ -26,7 +26,7 @@
 
 Name:		   dotnet
 Version:        10.0.3
-Release:        1
+Release:        2
 Summary:        .NET SDK meta package
 Group:          Development
 License:        MIT
@@ -290,7 +290,8 @@ DOTNET_CLI_TELEMETRY_OPTOUT=1 ./build.sh \
     --with-sdk %{_builddir}/%name-%version/bs_sdk \
     --with-packages %{_builddir}/%name-%version/bs_artifacts \
     --release-manifest %{S:1} \
-    --with-system-libs brotli+llvmlibunwind+rapidjson+zlib 
+    --with-system-libs brotli+llvmlibunwind+rapidjson+zlib \
+    --clean-while-building
 
 %install
 install -dm 0755 %{buildroot}%{_libdir}/%name
