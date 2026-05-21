@@ -13,7 +13,7 @@
 # It must be created locally and uploaded as part of the spec binaries to ABF for each major version.
 # Stage 2 is performed by this spec
 
-%define sdk_version 10.0.202
+%define sdk_version 10.0.300
 %define servicing_version 26075.103
 
 %define bootstrap_version 10.0.103
@@ -24,8 +24,10 @@
 %define bootstrap_arch arm64
 %endif
 
+%define product_version 26.90
+
 Name:		   dotnet
-Version:        10.0.6
+Version:        10.0.8
 Release:        1
 Summary:        .NET SDK meta package
 Group:          Development
