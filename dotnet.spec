@@ -28,7 +28,7 @@
 
 Name:		   dotnet
 Version:        10.0.8
-Release:        1
+Release:        2
 Summary:        .NET SDK meta package
 Group:          Development
 License:        MIT
