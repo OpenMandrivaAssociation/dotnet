@@ -1,6 +1,6 @@
 sources:
   Private.SourceBuilt.Artifacts.10.0.103-servicing.26075.103.openmandriva.26.90-arm64.tar.gz: f971df285b7f2b8ff636e3b07bfa621336b7541b
   Private.SourceBuilt.Artifacts.10.0.103-servicing.26075.103.openmandriva.26.90-x64.tar.gz: 66bea7a78ecf127825e7dd913f44521e08cf1dff
-  dotnet-10.0.300.tar.gz: edb6256b6287a5140c2ba342eb2794297c91d36b
+  dotnet-10.0.402.tar.gz: 3eaac9aa970419dec084bf17ee6fd3b95a4fa656
   dotnet-sdk-10.0.103-openmandriva.26.90-arm64.tar.gz: e4e58fc37ca5a35537e80db78aa2e2ea55cdc908
   dotnet-sdk-10.0.103-openmandriva.26.90-x64.tar.gz: c50cfd7f2b147b0f08968b213eb107bf11b1adfd

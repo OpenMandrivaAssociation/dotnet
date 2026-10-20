@@ -13,7 +13,7 @@
 # It must be created locally and uploaded as part of the spec binaries to ABF for each major version.
 # Stage 2 is performed by this spec
 
-%define sdk_version 10.0.300
+%define sdk_version 10.0.402
 %define servicing_version 26075.103
 
 %define bootstrap_version 10.0.103
@@ -27,8 +27,8 @@
 %define product_version 26.90
 
 Name:		   dotnet
-Version:        10.0.8
-Release:        2
+Version:        10.0.13
+Release:        1
 Summary:        .NET SDK meta package
 Group:          Development
 License:        MIT
@@ -38,6 +38,9 @@ Source0:        https://github.com/%name/%name/archive/v%version.tar.gz#/%name-%
 Source1:        https://github.com/%name/%name/releases/download/v%sdk_version/release.json#/release-%version.json
 Source2:        %name-sdk-%{bootstrap_version}-%{_vendor}.%{product_version}-%{bootstrap_arch}.tar.gz
 Source3:        Private.SourceBuilt.Artifacts.%{bootstrap_version}-servicing.%{servicing_version}.%{_vendor}.%{product_version}-%{bootstrap_arch}.tar.gz
+
+# Build fix from upstream for openssl 4 compilation
+Patch1:		73ae2764c385c0f7dd6ecd53aeaa961fd6db508c.diff.new
 
 BuildRequires:  cmake
 BuildRequires:  make
@@ -285,6 +288,9 @@ tar zxf %{S:3} -C bs_artifacts
     --no-binary-removal \
     --with-sdk %{_builddir}/%name-%version/bs_sdk \
     --with-packages %{_builddir}/%name-%version/bs_artifacts
+
+# Revert the requirements
+sed -i 's/112/103/' global.json
 
 %build
 DOTNET_CLI_TELEMETRY_OPTOUT=1 ./build.sh \
