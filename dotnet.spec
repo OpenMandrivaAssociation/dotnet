@@ -28,7 +28,7 @@
 
 Name:		   dotnet
 Version:        10.0.14
-Release:        1
+Release:        2
 Summary:        .NET SDK meta package
 Group:          Development
 License:        MIT
@@ -292,7 +292,18 @@ tar zxf %{S:3} -C bs_artifacts
 # Revert the requirements
 sed -i 's/112/103/' global.json
 
+%ifarch %{aarch64}
+# This builder reports 160 CPUs. Uncapped MSBuild (/m) and ninja ($(nproc))
+# are killed with SIGKILL 137 during runtime, aspnetcore, or fsharp.
+find . -path '*/eng/common/tools.sh' -exec sed -i 's| /m /nologo | /m:4 /nologo |' {} +
+find . -name build-commons.sh -exec sed -i 's|__NumProc="$(nproc)"|__NumProc="4"|' {} +
+%endif
+
 %build
+%ifarch %{aarch64}
+export RPM_BUILD_NCPUS=4
+export CMAKE_BUILD_PARALLEL_LEVEL=4
+%endif
 DOTNET_CLI_TELEMETRY_OPTOUT=1 ./build.sh \
     --source-only \
     --with-sdk %{_builddir}/%name-%version/bs_sdk \
